@@ -68,7 +68,7 @@ jobs:
             ${{ env.GHCR_IMAGE }}:${{ env.VERSION }}-amd64
 
   docker_arm64:
-    if: ${{ (github.event_name == 'workflow_dispatch' && inputs.build_arm64) || vars.ENABLE_ARM64_ON_PUSH == 'true' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_arm64 }}
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout
