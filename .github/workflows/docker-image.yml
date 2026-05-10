@@ -1,13 +1,6 @@
 name: docker-image
 
 on:
-  workflow_dispatch:
-    inputs:
-      build_arm64:
-        description: Build and publish ARM64 image
-        required: false
-        type: boolean
-        default: false
   push:
     branches:
       - main
