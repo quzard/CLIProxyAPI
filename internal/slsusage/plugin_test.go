@@ -2,7 +2,9 @@ package slsusage
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -141,10 +143,47 @@ func TestLogEntryFlattensUsageAndMasksAPIKey(t *testing.T) {
 	if entry["api_key_fingerprint"] != "sk-1...7890" {
 		t.Fatalf("api_key_fingerprint = %q", entry["api_key_fingerprint"])
 	}
+	sum := sha256.Sum256([]byte("sk-1234567890"))
+	wantHash := fmt.Sprintf("%x", sum[:])
+	if entry["api_key_hash"] != wantHash {
+		t.Fatalf("api_key_hash = %q, want %q", entry["api_key_hash"], wantHash)
+	}
+	if _, ok := entry["api_key"]; ok {
+		t.Fatalf("api_key should not be exported by default: %#v", entry)
+	}
 	if entry["total_tokens"] != "35" {
 		t.Fatalf("total_tokens = %q, want 35", entry["total_tokens"])
 	}
 	if entry["failed"] != "false" || entry["status_code"] != "200" {
 		t.Fatalf("unexpected success fields: failed=%q status=%q", entry["failed"], entry["status_code"])
+	}
+}
+
+func TestLogEntryIncludesPlaintextAPIKeyWhenEnabled(t *testing.T) {
+	plugin := &Plugin{cfg: Config{IncludeAPIKey: true}}
+	record := coreusage.Record{APIKey: " sk-1234567890 ", Source: "sk-1234567890"}
+
+	entry := plugin.logEntry(context.Background(), record)
+	if entry["api_key"] != "sk-1234567890" {
+		t.Fatalf("api_key = %q, want plaintext key", entry["api_key"])
+	}
+	if entry["source"] != "sk-1234567890" {
+		t.Fatalf("source = %q, want plaintext key source", entry["source"])
+	}
+	if entry["api_key_hash"] == "" {
+		t.Fatal("api_key_hash should be populated")
+	}
+}
+
+func TestLogEntryMasksAPIKeySourceByDefault(t *testing.T) {
+	plugin := &Plugin{}
+	record := coreusage.Record{APIKey: "sk-1234567890", Source: "sk-1234567890"}
+
+	entry := plugin.logEntry(context.Background(), record)
+	if entry["source"] != "sk-1...7890" {
+		t.Fatalf("source = %q, want fingerprint", entry["source"])
+	}
+	if _, ok := entry["api_key"]; ok {
+		t.Fatalf("api_key should not be exported by default: %#v", entry)
 	}
 }

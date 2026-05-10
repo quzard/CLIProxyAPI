@@ -70,6 +70,8 @@ CLIProxyAPI 用户手册： [https://help.router-for.me/](https://help.router-fo
 
 自v6.10.0版本以后，CLIProxyAPI及 [CPAMC](https://github.com/router-for-me/Cli-Proxy-API-Management-Center) 项目不再预置数据统计功能，如果有数据统计需求的请使用以下项目：
 
+如需把请求使用量异步上报到阿里云 SLS WebTracking，请参见 [SLS WebTracking 使用量上报](SLS_WEBTRACKING_USAGE_CN.md)。
+
 ### [CPA Usage Keeper](https://github.com/Willxup/cpa-usage-keeper)
 
 独立的 CLIProxyAPI 使用量持久化与可视化服务，定期同步 CLIProxyAPI 数据，存储到 SQLite，提供聚合 API，并内置使用量分析与统计仪表盘。

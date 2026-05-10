@@ -3,6 +3,7 @@ package slsusage
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -37,13 +38,14 @@ var (
 
 // Config contains the Alibaba Cloud SLS WebTracking settings.
 type Config struct {
-	Enabled   bool
-	Endpoint  string
-	Project   string
-	Logstore  string
-	Topic     string
-	Source    string
-	QueueSize int
+	Enabled       bool
+	Endpoint      string
+	Project       string
+	Logstore      string
+	Topic         string
+	Source        string
+	IncludeAPIKey bool
+	QueueSize     int
 }
 
 // Plugin forwards usage records to Alibaba Cloud SLS through WebTracking.
@@ -84,13 +86,14 @@ func defaultUsagePlugin(initial Config) *Plugin {
 
 func fromConfig(cfg internalconfig.SLSWebTrackingConfig) Config {
 	return Config{
-		Enabled:   cfg.Enabled,
-		Endpoint:  cfg.Endpoint,
-		Project:   cfg.Project,
-		Logstore:  cfg.Logstore,
-		Topic:     cfg.Topic,
-		Source:    cfg.Source,
-		QueueSize: cfg.QueueSize,
+		Enabled:       cfg.Enabled,
+		Endpoint:      cfg.Endpoint,
+		Project:       cfg.Project,
+		Logstore:      cfg.Logstore,
+		Topic:         cfg.Topic,
+		Source:        cfg.Source,
+		IncludeAPIKey: cfg.IncludeAPIKey,
+		QueueSize:     cfg.QueueSize,
 	}
 }
 
@@ -272,6 +275,12 @@ func (p *Plugin) logEntry(ctx context.Context, record coreusage.Record) map[stri
 	authType := trimDefault(record.AuthType, "unknown")
 	requestID := strings.TrimSpace(internallogging.GetRequestID(ctx))
 	endpoint := strings.TrimSpace(internallogging.GetEndpoint(ctx))
+	apiKey := strings.TrimSpace(record.APIKey)
+	includeAPIKey := p.includeAPIKey()
+	source := strings.TrimSpace(record.Source)
+	if apiKey != "" && source == apiKey && !includeAPIKey {
+		source = apiKeyFingerprint(apiKey)
+	}
 
 	inputTokens := record.Detail.InputTokens
 	outputTokens := record.Detail.OutputTokens
@@ -304,7 +313,7 @@ func (p *Plugin) logEntry(ctx context.Context, record coreusage.Record) map[stri
 		}
 	}
 
-	return map[string]string{
+	entry := map[string]string{
 		"event":               "usage",
 		"request_time":        timestamp.UTC().Format(time.RFC3339Nano),
 		"request_id":          requestID,
@@ -312,11 +321,12 @@ func (p *Plugin) logEntry(ctx context.Context, record coreusage.Record) map[stri
 		"model":               modelName,
 		"alias":               aliasName,
 		"endpoint":            endpoint,
-		"source":              strings.TrimSpace(record.Source),
+		"source":              source,
 		"auth_id":             strings.TrimSpace(record.AuthID),
 		"auth_index":          strings.TrimSpace(record.AuthIndex),
 		"auth_type":           authType,
-		"api_key_fingerprint": apiKeyFingerprint(record.APIKey),
+		"api_key_fingerprint": apiKeyFingerprint(apiKey),
+		"api_key_hash":        apiKeyHash(apiKey),
 		"latency_ms":          strconv.FormatInt(record.Latency.Milliseconds(), 10),
 		"failed":              strconv.FormatBool(failed),
 		"status_code":         strconv.Itoa(statusCode),
@@ -327,6 +337,10 @@ func (p *Plugin) logEntry(ctx context.Context, record coreusage.Record) map[stri
 		"cached_tokens":       strconv.FormatInt(cachedTokens, 10),
 		"total_tokens":        strconv.FormatInt(totalTokens, 10),
 	}
+	if includeAPIKey {
+		entry["api_key"] = apiKey
+	}
+	return entry
 }
 
 type webTrackingPayload struct {
@@ -415,4 +429,22 @@ func apiKeyFingerprint(value string) string {
 		return strings.Repeat("*", len(value))
 	}
 	return value[:4] + "..." + value[len(value)-4:]
+}
+
+func apiKeyHash(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return ""
+	}
+	sum := sha256.Sum256([]byte(value))
+	return fmt.Sprintf("%x", sum[:])
+}
+
+func (p *Plugin) includeAPIKey() bool {
+	if p == nil {
+		return false
+	}
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return p.cfg.IncludeAPIKey
 }

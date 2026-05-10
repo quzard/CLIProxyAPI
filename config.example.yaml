@@ -82,6 +82,8 @@ sls-webtracking:
   endpoint: ""
   topic: "cliproxy_usage"
   source: ""
+  # Set to true only if you explicitly want plaintext client API keys in SLS logs.
+  include-api-key: false
   queue-size: 1024
 
 # How long (in seconds) Redis usage queue items are retained in memory for the RESP interface (LPOP/RPOP).

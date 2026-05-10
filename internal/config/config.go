@@ -207,6 +207,8 @@ type SLSWebTrackingConfig struct {
 	Topic string `yaml:"topic" json:"topic"`
 	// Source is the optional SLS __source__ value. Defaults to the hostname.
 	Source string `yaml:"source" json:"source"`
+	// IncludeAPIKey controls whether the plaintext client API key is exported.
+	IncludeAPIKey bool `yaml:"include-api-key" json:"include-api-key"`
 	// QueueSize is the local buffered queue size for async export.
 	QueueSize int `yaml:"queue-size" json:"queue-size"`
 }

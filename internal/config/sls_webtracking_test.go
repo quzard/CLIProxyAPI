@@ -18,6 +18,7 @@ sls-webtracking:
   endpoint: " cn-hangzhou.log.aliyuncs.com "
   topic: " usage "
   source: " node-a "
+  include-api-key: true
   queue-size: 2048
 `)
 	if err := os.WriteFile(path, data, 0644); err != nil {
@@ -48,6 +49,9 @@ sls-webtracking:
 	}
 	if cfg.SLSWebTracking.Source != "node-a" {
 		t.Fatalf("source = %q", cfg.SLSWebTracking.Source)
+	}
+	if !cfg.SLSWebTracking.IncludeAPIKey {
+		t.Fatal("include-api-key should be enabled")
 	}
 	if cfg.SLSWebTracking.QueueSize != 2048 {
 		t.Fatalf("queue-size = %d", cfg.SLSWebTracking.QueueSize)

@@ -51,6 +51,9 @@ func BuildConfigChangeDetails(oldCfg, newCfg *config.Config) []string {
 	if strings.TrimSpace(oldCfg.SLSWebTracking.Endpoint) != strings.TrimSpace(newCfg.SLSWebTracking.Endpoint) {
 		changes = append(changes, fmt.Sprintf("sls-webtracking.endpoint: %s -> %s", strings.TrimSpace(oldCfg.SLSWebTracking.Endpoint), strings.TrimSpace(newCfg.SLSWebTracking.Endpoint)))
 	}
+	if oldCfg.SLSWebTracking.IncludeAPIKey != newCfg.SLSWebTracking.IncludeAPIKey {
+		changes = append(changes, fmt.Sprintf("sls-webtracking.include-api-key: %t -> %t", oldCfg.SLSWebTracking.IncludeAPIKey, newCfg.SLSWebTracking.IncludeAPIKey))
+	}
 	if oldCfg.RedisUsageQueueRetentionSeconds != newCfg.RedisUsageQueueRetentionSeconds {
 		changes = append(changes, fmt.Sprintf("redis-usage-queue-retention-seconds: %d -> %d", oldCfg.RedisUsageQueueRetentionSeconds, newCfg.RedisUsageQueueRetentionSeconds))
 	}
