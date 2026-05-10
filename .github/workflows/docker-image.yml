@@ -14,14 +14,9 @@ on:
     tags:
       - v*
 
-permissions:
-  contents: read
-  packages: write
-
 env:
   APP_NAME: CLIProxyAPI
-  DOCKERHUB_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/cli-proxy-api-plus
-  GHCR_IMAGE: ghcr.io/${{ github.repository_owner }}/cli-proxy-api-plus
+  DOCKERHUB_REPO: eceasy/cli-proxy-api
 
 jobs:
   docker_amd64:
@@ -40,12 +35,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Generate Build Metadata
         run: |
           echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_ENV
@@ -64,11 +53,8 @@ jobs:
           tags: |
             ${{ env.DOCKERHUB_REPO }}:latest-amd64
             ${{ env.DOCKERHUB_REPO }}:${{ env.VERSION }}-amd64
-            ${{ env.GHCR_IMAGE }}:latest-amd64
-            ${{ env.GHCR_IMAGE }}:${{ env.VERSION }}-amd64
 
   docker_arm64:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_arm64 }}
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout
@@ -84,12 +70,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Generate Build Metadata
         run: |
           echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_ENV
@@ -108,11 +88,8 @@ jobs:
           tags: |
             ${{ env.DOCKERHUB_REPO }}:latest-arm64
             ${{ env.DOCKERHUB_REPO }}:${{ env.VERSION }}-arm64
-            ${{ env.GHCR_IMAGE }}:latest-arm64
-            ${{ env.GHCR_IMAGE }}:${{ env.VERSION }}-arm64
 
   docker_manifest:
-    if: ${{ always() && needs.docker_amd64.result == 'success' && (needs.docker_arm64.result == 'success' || needs.docker_arm64.result == 'skipped') }}
     runs-on: ubuntu-latest
     needs:
       - docker_amd64
@@ -127,12 +104,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Generate Build Metadata
         run: |
           echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_ENV
@@ -140,54 +111,14 @@ jobs:
           echo BUILD_DATE=`date -u +%Y-%m-%dT%H:%M:%SZ` >> $GITHUB_ENV
       - name: Create and push multi-arch manifests
         run: |
-          create_manifest() {
-            local target="$1"
-            shift
-
-            local attempt=1
-            local max_attempts=12
-            local sleep_seconds=10
-
-            while true; do
-              if docker buildx imagetools create --tag "${target}" "$@"; then
-                echo "Manifest created: ${target}"
-                return 0
-              fi
-
-              if [ "${attempt}" -ge "${max_attempts}" ]; then
-                echo "Manifest create failed after ${max_attempts} attempts: ${target}"
-                return 1
-              fi
-
-              echo "Manifest sources not ready yet for ${target}; retry ${attempt}/${max_attempts} after ${sleep_seconds}s"
-              attempt=$((attempt + 1))
-              sleep "${sleep_seconds}"
-            done
-          }
-
-          if [ "${{ needs.docker_arm64.result }}" = "success" ]; then
-            create_manifest "${DOCKERHUB_REPO}:latest" \
-              "${DOCKERHUB_REPO}:latest-amd64" \
-              "${DOCKERHUB_REPO}:latest-arm64"
-            create_manifest "${DOCKERHUB_REPO}:${VERSION}" \
-              "${DOCKERHUB_REPO}:${VERSION}-amd64" \
-              "${DOCKERHUB_REPO}:${VERSION}-arm64"
-            create_manifest "${GHCR_IMAGE}:latest" \
-              "${GHCR_IMAGE}:latest-amd64" \
-              "${GHCR_IMAGE}:latest-arm64"
-            create_manifest "${GHCR_IMAGE}:${VERSION}" \
-              "${GHCR_IMAGE}:${VERSION}-amd64" \
-              "${GHCR_IMAGE}:${VERSION}-arm64"
-          else
-            create_manifest "${DOCKERHUB_REPO}:latest" \
-              "${DOCKERHUB_REPO}:latest-amd64"
-            create_manifest "${DOCKERHUB_REPO}:${VERSION}" \
-              "${DOCKERHUB_REPO}:${VERSION}-amd64"
-            create_manifest "${GHCR_IMAGE}:latest" \
-              "${GHCR_IMAGE}:latest-amd64"
-            create_manifest "${GHCR_IMAGE}:${VERSION}" \
-              "${GHCR_IMAGE}:${VERSION}-amd64"
-          fi
+          docker buildx imagetools create \
+            --tag "${DOCKERHUB_REPO}:latest" \
+            "${DOCKERHUB_REPO}:latest-amd64" \
+            "${DOCKERHUB_REPO}:latest-arm64"
+          docker buildx imagetools create \
+            --tag "${DOCKERHUB_REPO}:${VERSION}" \
+            "${DOCKERHUB_REPO}:${VERSION}-amd64" \
+            "${DOCKERHUB_REPO}:${VERSION}-arm64"
       - name: Cleanup temporary tags
         continue-on-error: true
         env:
