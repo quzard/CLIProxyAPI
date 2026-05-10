@@ -69,6 +69,9 @@ type Config struct {
 	// UsageStatisticsEnabled toggles in-memory usage aggregation; when false, usage data is discarded.
 	UsageStatisticsEnabled bool `yaml:"usage-statistics-enabled" json:"usage-statistics-enabled"`
 
+	// SLSWebTracking controls optional usage export to Alibaba Cloud SLS WebTracking.
+	SLSWebTracking SLSWebTrackingConfig `yaml:"sls-webtracking" json:"sls-webtracking"`
+
 	// RedisUsageQueueRetentionSeconds controls how long (in seconds) usage queue items
 	// are retained in memory for the Redis RESP interface (LPOP/RPOP).
 	// Default: 60. Max: 3600.
@@ -188,6 +191,24 @@ type PprofConfig struct {
 	Enable bool `yaml:"enable" json:"enable"`
 	// Addr is the host:port address for the pprof HTTP server.
 	Addr string `yaml:"addr" json:"addr"`
+}
+
+// SLSWebTrackingConfig holds Alibaba Cloud SLS WebTracking usage export settings.
+type SLSWebTrackingConfig struct {
+	// Enabled toggles SLS WebTracking usage export.
+	Enabled bool `yaml:"enabled" json:"enabled"`
+	// Project is the SLS project name.
+	Project string `yaml:"project" json:"project"`
+	// Logstore is the target SLS logstore name.
+	Logstore string `yaml:"logstore" json:"logstore"`
+	// Endpoint is the SLS endpoint, with or without scheme and project prefix.
+	Endpoint string `yaml:"endpoint" json:"endpoint"`
+	// Topic is the optional SLS __topic__ value. Defaults to "cliproxy_usage".
+	Topic string `yaml:"topic" json:"topic"`
+	// Source is the optional SLS __source__ value. Defaults to the hostname.
+	Source string `yaml:"source" json:"source"`
+	// QueueSize is the local buffered queue size for async export.
+	QueueSize int `yaml:"queue-size" json:"queue-size"`
 }
 
 // RemoteManagement holds management API configuration under 'remote-management'.
@@ -719,6 +740,9 @@ func LoadConfigOptional(configFile string, optional bool) (*Config, error) {
 	// Sanitize OpenAI compatibility providers: drop entries without base-url
 	cfg.SanitizeOpenAICompatibility()
 
+	// Sanitize SLS WebTracking usage export settings.
+	cfg.SanitizeSLSWebTracking()
+
 	// Normalize OAuth provider model exclusion map.
 	cfg.OAuthExcludedModels = NormalizeOAuthExcludedModels(cfg.OAuthExcludedModels)
 
@@ -754,6 +778,21 @@ func (cfg *Config) SanitizePayloadRules() {
 	}
 	cfg.Payload.DefaultRaw = sanitizePayloadRawRules(cfg.Payload.DefaultRaw, "default-raw")
 	cfg.Payload.OverrideRaw = sanitizePayloadRawRules(cfg.Payload.OverrideRaw, "override-raw")
+}
+
+// SanitizeSLSWebTracking trims and bounds optional SLS WebTracking settings.
+func (cfg *Config) SanitizeSLSWebTracking() {
+	if cfg == nil {
+		return
+	}
+	cfg.SLSWebTracking.Project = strings.TrimSpace(cfg.SLSWebTracking.Project)
+	cfg.SLSWebTracking.Logstore = strings.TrimSpace(cfg.SLSWebTracking.Logstore)
+	cfg.SLSWebTracking.Endpoint = strings.TrimSpace(cfg.SLSWebTracking.Endpoint)
+	cfg.SLSWebTracking.Topic = strings.TrimSpace(cfg.SLSWebTracking.Topic)
+	cfg.SLSWebTracking.Source = strings.TrimSpace(cfg.SLSWebTracking.Source)
+	if cfg.SLSWebTracking.QueueSize < 0 {
+		cfg.SLSWebTracking.QueueSize = 0
+	}
 }
 
 func sanitizePayloadRawRules(rules []PayloadRule, section string) []PayloadRule {

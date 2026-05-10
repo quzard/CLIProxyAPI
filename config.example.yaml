@@ -73,6 +73,17 @@ error-logs-max-files: 10
 # When false, disable in-memory usage statistics aggregation
 usage-statistics-enabled: false
 
+# Alibaba Cloud SLS WebTracking usage export.
+# The target Logstore must have WebTracking enabled in SLS.
+sls-webtracking:
+  enabled: false
+  project: ""
+  logstore: ""
+  endpoint: ""
+  topic: "cliproxy_usage"
+  source: ""
+  queue-size: 1024
+
 # How long (in seconds) Redis usage queue items are retained in memory for the RESP interface (LPOP/RPOP).
 # Note: the in-process Redis RESP usage output is disabled when home.enabled is true.
 # Default: 60. Max: 3600.

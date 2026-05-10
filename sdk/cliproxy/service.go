@@ -17,6 +17,7 @@ import (
 	"github.com/router-for-me/CLIProxyAPI/v7/internal/redisqueue"
 	"github.com/router-for-me/CLIProxyAPI/v7/internal/registry"
 	"github.com/router-for-me/CLIProxyAPI/v7/internal/runtime/executor"
+	"github.com/router-for-me/CLIProxyAPI/v7/internal/slsusage"
 	"github.com/router-for-me/CLIProxyAPI/v7/internal/util"
 	"github.com/router-for-me/CLIProxyAPI/v7/internal/watcher"
 	"github.com/router-for-me/CLIProxyAPI/v7/internal/watcher/diff"
@@ -545,6 +546,7 @@ func (s *Service) applyConfigUpdate(newCfg *config.Config) {
 
 	s.applyRetryConfig(newCfg)
 	s.applyPprofConfig(newCfg)
+	s.applySLSUsageConfig(newCfg)
 	if s.server != nil {
 		s.server.UpdateClients(newCfg)
 	}
@@ -556,6 +558,15 @@ func (s *Service) applyConfigUpdate(newCfg *config.Config) {
 		s.coreManager.SetOAuthModelAlias(newCfg.OAuthModelAlias)
 	}
 	s.rebindExecutors()
+}
+
+func (s *Service) applySLSUsageConfig(cfg *config.Config) {
+	if cfg == nil {
+		return
+	}
+	if err := slsusage.Configure(cfg.SLSWebTracking); err != nil {
+		log.WithError(err).Warn("SLS WebTracking usage export disabled")
+	}
 }
 
 func forceHomeRuntimeConfig(cfg *config.Config) {
@@ -758,6 +769,7 @@ func (s *Service) Run(ctx context.Context) error {
 		forceHomeRuntimeConfig(s.cfg)
 		redisqueue.SetUsageStatisticsEnabled(true)
 	}
+	s.applySLSUsageConfig(s.cfg)
 
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer shutdownCancel()
