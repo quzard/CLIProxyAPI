@@ -1,6 +1,6 @@
 services:
   cli-proxy-api:
-    image: ${CLI_PROXY_IMAGE:-eceasy/cli-proxy-api:latest}
+    image: ${CLI_PROXY_IMAGE:-ghcr.io/quzard/cli-proxy-api:main}
     pull_policy: always
     build:
       context: .
@@ -13,6 +13,7 @@ services:
     # env_file:
     #   - .env
     environment:
+      TZ: America/Los_Angeles
       DEPLOY: ${DEPLOY:-}
     ports:
       - "8317:8317"
