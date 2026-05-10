@@ -8,6 +8,8 @@ RUN go mod download
 
 COPY . .
 
+RUN mkdir -p /app/static
+
 ARG VERSION=dev
 ARG COMMIT=none
 ARG BUILD_DATE=unknown
@@ -23,6 +25,7 @@ RUN mkdir /CLIProxyAPI
 COPY --from=builder ./app/CLIProxyAPI /CLIProxyAPI/CLIProxyAPI
 
 COPY config.example.yaml /CLIProxyAPI/config.example.yaml
+COPY --from=builder ./app/static /CLIProxyAPI/static
 
 WORKDIR /CLIProxyAPI
 

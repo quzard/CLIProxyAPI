@@ -14,6 +14,7 @@ permissions:
 env:
   APP_NAME: CLIProxyAPI
   IMAGE_NAME: cli-proxy-api
+  PANEL_REPOSITORY: ${{ github.repository_owner }}/Cli-Proxy-API-Management-Center
 
 jobs:
   docker_amd64:
@@ -25,6 +26,25 @@ jobs:
         run: |
           git fetch --depth 1 https://github.com/router-for-me/models.git main
           git show FETCH_HEAD:models.json > internal/registry/models/models.json
+      - name: Checkout management panel
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.PANEL_REPOSITORY }}
+          path: management-center
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: management-center/package-lock.json
+      - name: Build management panel
+        working-directory: management-center
+        run: |
+          npm ci
+          npm run build
+          mkdir -p ../static
+          cp dist/index.html ../static/management.html
+          rm -rf ../management-center
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Login to GHCR

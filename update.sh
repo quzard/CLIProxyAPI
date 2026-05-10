@@ -90,6 +90,9 @@ COMPOSE_PROJECT_NAME="$(env_or_dotenv COMPOSE_PROJECT_NAME cliproxyapiplus)"
 export CLI_PROXY_IMAGE
 CLI_PROXY_IMAGE="$(env_or_dotenv CLI_PROXY_IMAGE "$DEFAULT_IMAGE")"
 
+export CLI_PROXY_STATIC_PATH
+CLI_PROXY_STATIC_PATH="$(env_or_dotenv CLI_PROXY_STATIC_PATH "${CLI_PROXY_STATIC_PATH:-}")"
+
 SERVICE_URL="${SERVICE_URL:-http://127.0.0.1:8317}"
 HEALTH_URL="${HEALTH_URL:-$SERVICE_URL/healthz}"
 MGMT_URL="${MGMT_URL:-$SERVICE_URL/v0/management}"
@@ -99,9 +102,9 @@ STATS_DIR="${STATS_DIR:-temp/stats}"
 USAGE_BACKUP="${USAGE_BACKUP:-$STATS_DIR/usage.json}"
 USAGE_SYNC="${USAGE_SYNC:-auto}"
 IMPORT_EXISTING_USAGE_BACKUP="${IMPORT_EXISTING_USAGE_BACKUP:-false}"
-PANEL_STATIC_DIR="${PANEL_STATIC_DIR:-${MANAGEMENT_STATIC_PATH:-temp/static}}"
-PANEL_REPO="${PANEL_REPO:-}"
-SYNC_MANAGEMENT_PANEL="${SYNC_MANAGEMENT_PANEL:-true}"
+PANEL_STATIC_DIR="$(env_or_dotenv PANEL_STATIC_DIR "${PANEL_STATIC_DIR:-${CLI_PROXY_STATIC_PATH:-${MANAGEMENT_STATIC_PATH:-temp/static}}}")"
+PANEL_REPO="$(env_or_dotenv PANEL_REPO "${PANEL_REPO:-}")"
+SYNC_MANAGEMENT_PANEL="$(env_or_dotenv SYNC_MANAGEMENT_PANEL "${SYNC_MANAGEMENT_PANEL:-true}")"
 WAIT_TIMEOUT="${WAIT_TIMEOUT:-90}"
 WAIT_INTERVAL="${WAIT_INTERVAL:-2}"
 LOG_TAIL="${LOG_TAIL:-160}"
@@ -308,6 +311,7 @@ prepare_runtime_paths() {
   mkdir -p "$(abs_path "$STATS_DIR")" "$(abs_path "$PANEL_STATIC_DIR")"
   prepare_host_dir "${CLI_PROXY_AUTH_PATH:-./auths}"
   prepare_host_dir "${CLI_PROXY_LOG_PATH:-./logs}"
+  prepare_host_dir "${CLI_PROXY_STATIC_PATH:-$PANEL_STATIC_DIR}"
   prepare_host_file_parent "${CLI_PROXY_CONFIG_PATH:-./config.yaml}"
 
   if is_truthy "$REQUIRE_CONFIG"; then
@@ -321,6 +325,7 @@ prepare_runtime_paths() {
   STATS_DIR="$(abs_path "$STATS_DIR")"
   USAGE_BACKUP="$(abs_path "$USAGE_BACKUP")"
   PANEL_STATIC_DIR="$(abs_path "$PANEL_STATIC_DIR")"
+  export CLI_PROXY_STATIC_PATH="${CLI_PROXY_STATIC_PATH:-$PANEL_STATIC_DIR}"
 }
 
 http_request() {
