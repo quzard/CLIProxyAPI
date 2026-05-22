@@ -81,7 +81,6 @@ func ParseConfigBytes(data []byte) (*Config, error) {
 	cfg.SanitizeClaudeHeaderDefaults()
 	cfg.SanitizeClaudeKeys()
 	cfg.SanitizeOpenAICompatibility()
-	cfg.SanitizeSLSWebTracking()
 	cfg.OAuthExcludedModels = NormalizeOAuthExcludedModels(cfg.OAuthExcludedModels)
 	cfg.SanitizeOAuthModelAlias()
 	cfg.SanitizePayloadRules()

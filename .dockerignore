@@ -35,5 +35,3 @@ bin/*
 .bmad/*
 _bmad/*
 _bmad-output/*
-management-center/*
-node_modules/*

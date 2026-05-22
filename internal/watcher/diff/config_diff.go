@@ -39,21 +39,6 @@ func BuildConfigChangeDetails(oldCfg, newCfg *config.Config) []string {
 	if oldCfg.UsageStatisticsEnabled != newCfg.UsageStatisticsEnabled {
 		changes = append(changes, fmt.Sprintf("usage-statistics-enabled: %t -> %t", oldCfg.UsageStatisticsEnabled, newCfg.UsageStatisticsEnabled))
 	}
-	if oldCfg.SLSWebTracking.Enabled != newCfg.SLSWebTracking.Enabled {
-		changes = append(changes, fmt.Sprintf("sls-webtracking.enabled: %t -> %t", oldCfg.SLSWebTracking.Enabled, newCfg.SLSWebTracking.Enabled))
-	}
-	if strings.TrimSpace(oldCfg.SLSWebTracking.Project) != strings.TrimSpace(newCfg.SLSWebTracking.Project) {
-		changes = append(changes, fmt.Sprintf("sls-webtracking.project: %s -> %s", strings.TrimSpace(oldCfg.SLSWebTracking.Project), strings.TrimSpace(newCfg.SLSWebTracking.Project)))
-	}
-	if strings.TrimSpace(oldCfg.SLSWebTracking.Logstore) != strings.TrimSpace(newCfg.SLSWebTracking.Logstore) {
-		changes = append(changes, fmt.Sprintf("sls-webtracking.logstore: %s -> %s", strings.TrimSpace(oldCfg.SLSWebTracking.Logstore), strings.TrimSpace(newCfg.SLSWebTracking.Logstore)))
-	}
-	if strings.TrimSpace(oldCfg.SLSWebTracking.Endpoint) != strings.TrimSpace(newCfg.SLSWebTracking.Endpoint) {
-		changes = append(changes, fmt.Sprintf("sls-webtracking.endpoint: %s -> %s", strings.TrimSpace(oldCfg.SLSWebTracking.Endpoint), strings.TrimSpace(newCfg.SLSWebTracking.Endpoint)))
-	}
-	if oldCfg.SLSWebTracking.IncludeAPIKey != newCfg.SLSWebTracking.IncludeAPIKey {
-		changes = append(changes, fmt.Sprintf("sls-webtracking.include-api-key: %t -> %t", oldCfg.SLSWebTracking.IncludeAPIKey, newCfg.SLSWebTracking.IncludeAPIKey))
-	}
 	if oldCfg.RedisUsageQueueRetentionSeconds != newCfg.RedisUsageQueueRetentionSeconds {
 		changes = append(changes, fmt.Sprintf("redis-usage-queue-retention-seconds: %d -> %d", oldCfg.RedisUsageQueueRetentionSeconds, newCfg.RedisUsageQueueRetentionSeconds))
 	}

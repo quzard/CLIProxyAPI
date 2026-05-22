@@ -224,7 +224,6 @@ func TestBuildConfigChangeDetails_FlagsAndKeys(t *testing.T) {
 		Debug:                  false,
 		LoggingToFile:          false,
 		UsageStatisticsEnabled: false,
-		SLSWebTracking:         config.SLSWebTrackingConfig{IncludeAPIKey: false},
 		DisableCooling:         false,
 		RequestRetry:           1,
 		MaxRetryCredentials:    1,
@@ -249,7 +248,6 @@ func TestBuildConfigChangeDetails_FlagsAndKeys(t *testing.T) {
 		Debug:                  true,
 		LoggingToFile:          true,
 		UsageStatisticsEnabled: true,
-		SLSWebTracking:         config.SLSWebTrackingConfig{IncludeAPIKey: true},
 		DisableCooling:         true,
 		RequestRetry:           2,
 		MaxRetryCredentials:    3,
@@ -289,7 +287,6 @@ func TestBuildConfigChangeDetails_FlagsAndKeys(t *testing.T) {
 	expectContains(t, details, "debug: false -> true")
 	expectContains(t, details, "logging-to-file: false -> true")
 	expectContains(t, details, "usage-statistics-enabled: false -> true")
-	expectContains(t, details, "sls-webtracking.include-api-key: false -> true")
 	expectContains(t, details, "disable-cooling: false -> true")
 	expectContains(t, details, "disable-image-generation: false -> true")
 	expectContains(t, details, "request-log: false -> true")
